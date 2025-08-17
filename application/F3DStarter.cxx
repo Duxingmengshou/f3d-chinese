@@ -514,7 +514,7 @@ public:
 
     // Initialize libf3dOptions
     f3d::options libOptions;
-    libOptions.ui.drop_zone.info = "Drop a file or HDRI to load it\nPress H to show cheatsheet";
+    libOptions.ui.drop_zone.info = u8"Drop a file or HDRI to load it\nPress H to show cheatsheet\n ÍÏ¶¯";
 
     // Copy appOptions
     F3DOptionsTools::OptionsDict appOptions = F3DOptionsTools::DefaultAppOptions;

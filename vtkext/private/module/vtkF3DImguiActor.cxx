@@ -268,10 +268,75 @@ vtkF3DImguiActor::vtkF3DImguiActor()
 {
 }
 
-//----------------------------------------------------------------------------
+////----------------------------------------------------------------------------
+// void vtkF3DImguiActor::Initialize(vtkOpenGLRenderWindow* renWin)
+//{
+//   // release existing context
+//   this->ReleaseGraphicsResources(renWin);
+//
+//   ImGuiContext* ctx = ImGui::CreateContext();
+//   ImGui::SetCurrentContext(ctx);
+//
+//   ImGuiIO& io = ImGui::GetIO();
+//   io.IniFilename = nullptr;
+//   io.LogFilename = nullptr;
+//
+//   ImFontConfig fontConfig;
+//
+//   ImFont* font = nullptr;
+//   const char* defaultChineseFont = "C:/Windows/Fonts/simsun.ttc"; // 宋体路径
+//   if (this->FontFile.empty())
+//   {
+//     // ImGui API is not very helpful with this
+//     fontConfig.FontDataOwnedByAtlas = false;
+//     // font = io.Fonts->AddFontFromMemoryTTF(
+//     //   const_cast<void*>(reinterpret_cast<const void*>(F3DFontBuffer)), sizeof(F3DFontBuffer),
+//     18,
+//     //   &fontConfig, io.Fonts->GetGlyphRangesChineseFull());
+//     font = io.Fonts->AddFontFromFileTTF(defaultChineseFont, 18.0f * this->FontScale, &fontConfig,
+//       io.Fonts->GetGlyphRangesChineseFull());
+//   }
+//   else
+//   {
+//     font = io.Fonts->AddFontFromFileTTF(
+//       this->FontFile.c_str(), 18, &fontConfig, io.Fonts->GetGlyphRangesChineseFull());
+//   }
+//
+//   font = io.Fonts->AddFontFromFileTTF(defaultChineseFont, 18.0f * this->FontScale, &fontConfig,
+//     io.Fonts->GetGlyphRangesChineseFull());
+//
+//   io.Fonts->Build();
+//   io.FontDefault = font;
+//   io.FontGlobalScale = this->FontScale;
+//
+//   ImVec4 colTransparent = ImVec4(0.0f, 0.0f, 0.0f, 0.0f); // #000000
+//
+//   ImGuiStyle* style = &ImGui::GetStyle();
+//   style->AntiAliasedLines = false;
+//   style->GrabRounding = 4.0f;
+//   style->WindowPadding = ImVec2(10, 10);
+//   style->WindowRounding = 8.f;
+//   style->WindowBorderSize = 0.f;
+//   style->FrameBorderSize = 0.f;
+//   style->FramePadding = ImVec2(4, 2);
+//   style->FrameRounding = 2.f;
+//   style->Colors[ImGuiCol_Text] = F3DImguiStyle::GetTextColor();
+//   style->Colors[ImGuiCol_WindowBg] = F3DImguiStyle::GetBackgroundColor();
+//   style->Colors[ImGuiCol_FrameBg] = colTransparent;
+//   style->Colors[ImGuiCol_FrameBgActive] = colTransparent;
+//   style->Colors[ImGuiCol_ScrollbarBg] = colTransparent;
+//   style->Colors[ImGuiCol_ScrollbarGrab] = F3DImguiStyle::GetMidColor();
+//   style->Colors[ImGuiCol_ScrollbarGrabHovered] = F3DImguiStyle::GetHighlightColor();
+//   style->Colors[ImGuiCol_ScrollbarGrabActive] = F3DImguiStyle::GetHighlightColor();
+//   style->Colors[ImGuiCol_TextSelectedBg] = F3DImguiStyle::GetHighlightColor();
+//
+//   // Setup backend name
+//   io.BackendPlatformName = io.BackendRendererName = "F3D/VTK";
+// }
+
 void vtkF3DImguiActor::Initialize(vtkOpenGLRenderWindow* renWin)
 {
-  // release existing context
+  // Release existing context
   this->ReleaseGraphicsResources(renWin);
 
   ImGuiContext* ctx = ImGui::CreateContext();
@@ -281,28 +346,44 @@ void vtkF3DImguiActor::Initialize(vtkOpenGLRenderWindow* renWin)
   io.IniFilename = nullptr;
   io.LogFilename = nullptr;
 
+  // Enable UTF-8 encoding (ImGui should handle it by default, but ensure it)
+  io.Fonts->Flags |= ImFontAtlasFlags_NoBakedLines; // Optional, but can help with font rendering
+
   ImFontConfig fontConfig;
+  fontConfig.FontDataOwnedByAtlas = false;
 
+  // Try to load the user-specified font (if provided)
   ImFont* font = nullptr;
-  if (this->FontFile.empty())
+  const char* defaultChineseFont = "C:/Windows/Fonts/simsun.ttc"; // 宋体路径
+  font = io.Fonts->AddFontFromFileTTF(defaultChineseFont, 18.0f * this->FontScale, &fontConfig,
+    io.Fonts->GetGlyphRangesChineseFull() // 加载完整中文字符集
+  );
+  if (!this->FontFile.empty())
   {
-    // ImGui API is not very helpful with this
-    fontConfig.FontDataOwnedByAtlas = false;
-    font = io.Fonts->AddFontFromMemoryTTF(
-      const_cast<void*>(reinterpret_cast<const void*>(F3DFontBuffer)), sizeof(F3DFontBuffer), 18,
-      &fontConfig);
-  }
-  else
-  {
-    font = io.Fonts->AddFontFromFileTTF(this->FontFile.c_str(), 18, &fontConfig);
+    // Load the user-provided font with Chinese glyphs
+    font = io.Fonts->AddFontFromFileTTF(this->FontFile.c_str(),
+      18.0f * this->FontScale, // Scale the default font size
+      &fontConfig,
+      io.Fonts->GetGlyphRangesChineseFull() // <-- 关键：加载中文字符集
+    );
   }
 
+  // If no font was loaded (or failed), fall back to the default font
+  if (!font)
+  {
+    // Fallback to the default font (if no Chinese support, this will still work for ASCII)
+    font = io.Fonts->AddFontFromMemoryTTF(
+      const_cast<void*>(reinterpret_cast<const void*>(F3DFontBuffer)), sizeof(F3DFontBuffer),
+      18.0f * this->FontScale, &fontConfig, io.Fonts->GetGlyphRangesChineseFull());
+  }
+
+  // Build the font atlas
   io.Fonts->Build();
   io.FontDefault = font;
   io.FontGlobalScale = this->FontScale;
 
-  ImVec4 colTransparent = ImVec4(0.0f, 0.0f, 0.0f, 0.0f); // #000000
-
+  // ... (rest of your style and color setup)
+  ImVec4 colTransparent = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
   ImGuiStyle* style = &ImGui::GetStyle();
   style->AntiAliasedLines = false;
   style->GrabRounding = 4.0f;
